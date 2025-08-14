@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interview System - Python Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .chat-bubble {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .typing-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-robot text-3xl"></i>
+                    <h1 class="text-2xl font-bold">Advanced AI Interview System</h1>
+                    <span class="bg-yellow-400 text-black px-2 py-1 rounded text-xs font-bold">Python</span>
+                    <span class="bg-purple-400 text-white px-2 py-1 rounded text-xs font-bold">NLP</span>
+                </div>
+                <div class="text-sm opacity-90">
+                    Powered by Python, Flask & Advanced AI
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Interview Setup Section -->
+        <div id="setup-section" class="max-w-2xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="text-center mb-8">
+                    <i class="fas fa-user-tie text-5xl text-blue-600 mb-4"></i>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Start Your Advanced AI Interview</h2>
+                    <p class="text-gray-600">Experience intelligent interviews with our Python-powered AI featuring NLP, sentiment analysis, and advanced evaluation</p>
+                </div>
+
+                <form id="interview-form" class="space-y-6">
+                    <div>
+                        <label for="candidate-name" class="block text-sm font-medium text-gray-700 mb-2">
+                            Your Name
+                        </label>
+                        <input 
+                            type="text" 
+                            id="candidate-name" 
+                            required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Enter your full name"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="interview-role" class="block text-sm font-medium text-gray-700 mb-2">
+                            Interview Role
+                        </label>
+                        <select 
+                            id="interview-role" 
+                            required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">Select a role</option>
+                            <option value="software-developer">Software Developer (Python)</option>
+                            <option value="data-scientist">Data Scientist</option>
+                            <option value="product-manager">Product Manager</option>
+                            <option value="general">General Interview</option>
+                        </select>
+                    </div>
+
+                    <button 
+                        type="submit"
+                        class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 transform hover:scale-105"
+                    >
+                        <i class="fas fa-play mr-2"></i>
+                        Start Interview
+                    </button>
+                </form>
+
+                <div class="mt-8 text-center">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                        <div class="flex flex-col items-center">
+                            <i class="fas fa-brain text-purple-500 text-xl mb-2"></i>
+                            <span>NLP Analysis</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <i class="fas fa-chart-line text-blue-500 text-xl mb-2"></i>
+                            <span>AI Scoring</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <i class="fas fa-lightbulb text-yellow-500 text-xl mb-2"></i>
+                            <span>Smart Feedback</span>
+                        </div>
+                        <div class="flex flex-col items-center">
+                            <i class="fas fa-robot text-green-500 text-xl mb-2"></i>
+                            <span>Advanced AI</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interview Interface -->
+        <div id="interview-section" class="max-w-4xl mx-auto hidden">
+            <div class="bg-white rounded-lg shadow-lg">
+                <!-- Interview Header -->
+                <div class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-t-lg">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-bold" id="interview-title">Interview in Progress</h2>
+                            <p class="opacity-90" id="interview-subtitle">Role: <span id="current-role"></span></p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm opacity-90">Question</div>
+                            <div class="text-2xl font-bold" id="question-counter">1/10</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Interface -->
+                <div class="p-6">
+                    <div id="chat-messages" class="space-y-4 mb-6 max-h-96 overflow-y-auto">
+                        <!-- Messages will be added here -->
+                    </div>
+
+                    <!-- Current Question Display -->
+                    <div id="current-question-display" class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded">
+                        <h3 class="font-semibold text-blue-800 mb-2">Current Question:</h3>
+                        <p id="current-question-text" class="text-blue-900 text-lg"></p>
+                    </div>
+
+                    <!-- Answer Input -->
+                    <div id="answer-input-section" class="space-y-4">
+                        <label for="answer-input" class="block text-sm font-medium text-gray-700">
+                            Your Answer:
+                        </label>
+                        <textarea 
+                            id="answer-input" 
+                            rows="4"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            placeholder="Type your answer here..."
+                        ></textarea>
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-500">
+                                <span id="char-count">0</span> characters
+                            </div>
+                            <button 
+                                id="submit-answer-btn"
+                                class="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <i class="fas fa-paper-plane mr-2"></i>
+                                Submit Answer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interview Results -->
+        <div id="results-section" class="max-w-4xl mx-auto hidden">
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="text-center mb-8">
+                    <i class="fas fa-trophy text-5xl text-yellow-500 mb-4"></i>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Interview Complete!</h2>
+                    <p class="text-gray-600">Here's your performance summary</p>
+                </div>
+
+                <!-- Score Card -->
+                <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-8">
+                    <div class="text-center">
+                        <div class="text-6xl font-bold text-blue-600 mb-2" id="final-score">85</div>
+                        <div class="text-xl text-gray-700 mb-4" id="score-label">Very Good</div>
+                        <div class="text-gray-600" id="overall-feedback"></div>
+                    </div>
+                </div>
+
+                <!-- AI Insights -->
+                <div class="space-y-6 mb-8">
+                    <h3 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-brain text-purple-500 mr-2"></i>
+                        AI-Powered Insights
+                    </h3>
+                    <div id="ai-insights" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- AI insights will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Performance Analysis -->
+                <div class="space-y-6 mb-8">
+                    <h3 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-chart-line text-blue-500 mr-2"></i>
+                        Performance Analysis
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div id="strengths-section" class="bg-green-50 rounded-lg p-4">
+                            <h4 class="font-semibold text-green-800 mb-2">Your Strengths</h4>
+                            <div id="strengths-list" class="text-green-700">
+                                <!-- Strengths will be populated here -->
+                            </div>
+                        </div>
+                        <div id="improvement-section" class="bg-yellow-50 rounded-lg p-4">
+                            <h4 class="font-semibold text-yellow-800 mb-2">Areas for Improvement</h4>
+                            <div id="improvement-list" class="text-yellow-700">
+                                <!-- Improvement areas will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Results -->
+                <div class="space-y-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Detailed Feedback</h3>
+                    <div id="detailed-feedback" class="space-y-4">
+                        <!-- Detailed feedback will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-center space-x-4 mt-8">
+                    <button 
+                        id="restart-interview-btn"
+                        class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200"
+                    >
+                        <i class="fas fa-redo mr-2"></i>
+                        Start New Interview
+                    </button>
+                    <button 
+                        id="download-results-btn"
+                        class="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition duration-200"
+                    >
+                        <i class="fas fa-download mr-2"></i>
+                        Download Results
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-16">
+        <div class="container mx-auto px-6 text-center">
+            <p class="text-gray-400">
+                AI Interview System - Powered by Python & Flask
+            </p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
